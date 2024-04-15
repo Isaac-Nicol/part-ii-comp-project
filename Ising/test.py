@@ -12,15 +12,15 @@ from ising_class import Ising
 # for i, a in enumerate(a_values):
 #     ising = Ising(N, a, b, alignment='up')
 #     lattice_samples[i, 0, :, :] = ising.lattice
-#     ising.evolve(algorithm='metropolis_hastings', steps=1)
+#     ising.evolve(algorithm='wolff', steps=1)
 #     lattice_samples[i, 1, :, :] = ising.lattice
-#     ising.evolve(algorithm='metropolis_hastings', steps=9)
+#     ising.evolve(algorithm='wolff', steps=9)
 #     lattice_samples[i, 2, :, :] = ising.lattice
-#     ising.evolve(algorithm='metropolis_hastings', steps=90)
+#     ising.evolve(algorithm='wolff', steps=90)
 #     lattice_samples[i, 3, :, :] = ising.lattice
-#     ising.evolve(algorithm='metropolis_hastings', steps=900)
+#     ising.evolve(algorithm='wolff', steps=90)
 #     lattice_samples[i, 4, :, :] = ising.lattice
-#     ising.evolve(algorithm='metropolis_hastings', steps=9000)
+#     ising.evolve(algorithm='wolff', steps=900)
 #     lattice_samples[i, 5, :, :] = ising.lattice
 
 # # Plot the lattice for each value of b at each of the sampled times
