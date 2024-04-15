@@ -99,7 +99,9 @@ class Ising:
     # Wolff algorithm #
     def wolff(self):
         '''
-        Method to perform the Wolff algorithm on the lattice.
+        Method to perform the Wolff algorithm on the lattice. This method is optimized for the case where
+        the spin-field coupling constant b = 0, and is only appropriate for that case. Note also that it
+        doesn't work well for the antiferromagnetic case (a < 0).
         '''
         # Generate seed spin
         seed = np.random.randint(self.N, size=2)
@@ -114,6 +116,7 @@ class Ising:
                 if self.lattice[nbr[0], nbr[1]] == spin and np.random.random() < self.wolff_padd:
                     self.lattice[nbr[0], nbr[1]] = -spin
                     unvisited.appendleft(nbr)
+    ####################################################################################################
 
     def evolve(self, algorithm, steps):
         '''

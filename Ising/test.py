@@ -3,36 +3,36 @@ import matplotlib.pyplot as plt
 from ising_class import Ising
 
 
-# N = 128
-# a_values = [-0.2, 0.6]
-# b = 0
-# lattice_samples = np.zeros((len(a_values), 6, N, N))
+N = 128
+a_values = [-0.2, 0.6]
+b = 0
+lattice_samples = np.zeros((len(a_values), 6, N, N))
 
-# # Run the simulation for different values of b
-# for i, a in enumerate(a_values):
-#     ising = Ising(N, a, b, alignment='up')
-#     lattice_samples[i, 0, :, :] = ising.lattice
-#     ising.evolve(algorithm='wolff', steps=1)
-#     lattice_samples[i, 1, :, :] = ising.lattice
-#     ising.evolve(algorithm='wolff', steps=9)
-#     lattice_samples[i, 2, :, :] = ising.lattice
-#     ising.evolve(algorithm='wolff', steps=90)
-#     lattice_samples[i, 3, :, :] = ising.lattice
-#     ising.evolve(algorithm='wolff', steps=90)
-#     lattice_samples[i, 4, :, :] = ising.lattice
-#     ising.evolve(algorithm='wolff', steps=900)
-#     lattice_samples[i, 5, :, :] = ising.lattice
+# Run the simulation for different values of b
+for i, a in enumerate(a_values):
+    ising = Ising(N, a, b, alignment='random')
+    lattice_samples[i, 0, :, :] = ising.lattice
+    ising.evolve(algorithm='wolff', steps=1)
+    lattice_samples[i, 1, :, :] = ising.lattice
+    ising.evolve(algorithm='wolff', steps=9)
+    lattice_samples[i, 2, :, :] = ising.lattice
+    ising.evolve(algorithm='wolff', steps=90)
+    lattice_samples[i, 3, :, :] = ising.lattice
+    ising.evolve(algorithm='wolff', steps=90)
+    lattice_samples[i, 4, :, :] = ising.lattice
+    ising.evolve(algorithm='wolff', steps=900)
+    lattice_samples[i, 5, :, :] = ising.lattice
 
-# # Plot the lattice for each value of b at each of the sampled times
-# fig, axes = plt.subplots(len(a_values), 6, figsize=(15, 6))
-# for i in range(len(a_values)):
-#     for j, t in enumerate([0, 1, 10, 100, 1000, 10000]):
-#         axes[i, j].imshow(lattice_samples[i, j, :, :], cmap='gray')
-#         axes[i, j].set_xticks([])
-#         axes[i, j].set_yticks([])
-#         axes[i, j].set_title(f'a = {a_values[i]}, t = {t}')
-# plt.suptitle('Evolution of the lattice for different values of a and upward initial configuration', y=0.92)
-# plt.show()
+# Plot the lattice for each value of b at each of the sampled times
+fig, axes = plt.subplots(len(a_values), 6, figsize=(15, 6))
+for i in range(len(a_values)):
+    for j, t in enumerate([0, 1, 10, 100, 1000, 10000]):
+        axes[i, j].imshow(lattice_samples[i, j, :, :], cmap='gray')
+        axes[i, j].set_xticks([])
+        axes[i, j].set_yticks([])
+        axes[i, j].set_title(f'a = {a_values[i]}, t = {t}')
+plt.suptitle('Evolution of the lattice for different values of a and upward initial configuration', y=0.92)
+plt.show()
 
 # Set initial parameters
 N = 128
@@ -41,10 +41,10 @@ b = 0
 rel_mag_array = np.array([])
 
 # Run the simulation for different values of a
-ising = Ising(N, 0, b, alignment='up')
+ising = Ising(N, 0, b, alignment='random')
 for a in a_values:
     ising.modify_params(a, b)
-    ising.evolve(algorithm='metropolis_hastings', steps=2000)
+    ising.evolve(algorithm='wolff', steps=200)
     ising.update_magnetization()
     rel_mag_array = np.append(rel_mag_array, ising.rel_mag)
 
