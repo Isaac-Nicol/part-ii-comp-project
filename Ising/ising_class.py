@@ -5,6 +5,7 @@ Plus whatever else I, the God of all Atoms, decide to add.
 '''
 
 
+from collections import deque
 import numpy as np
 
 
@@ -20,10 +21,12 @@ class Ising:
     up or down.
     '''
     def __init__(self, N_, a_, b_, alignment='random'):
+        # Parameters
         self.N = N_
         self.a = a_
         self.b = b_
         
+        # Lattice initialization
         if alignment == 'random':    
             self.lattice = np.random.choice([-1, 1], size=(N_, N_)).astype(np.int64)
         elif alignment == 'up':
@@ -31,15 +34,20 @@ class Ising:
         elif alignment == 'down':
             self.lattice = -np.ones((N_, N_)).astype(np.int64)
         
+        # General attributes
         self.rel_mag_history = np.array([])
         self.sys_energy_history = np.array([])
         self.update_magnetization()
         self.update_energy()
 
+        # Metropolis-Hastings attributes
         self.mh_lookup = np.exp(np.array([0, 0, -4, 0, -8, 8, 0, 4, 0]) * self.a) # lookup table for Metropolis-Hastings algorithm
         # Boolean masks to allow Metroplis-Hastings algorithm to be vectorized
         self.checkerboard = np.indices((N_, N_)).sum(axis=0) % 2
         self.opposite_checkerboard = np.logical_not(self.checkerboard)
+
+        # Wolff attributes
+        self.wolff_padd = 1 - np.exp(-2 * self.a)
 
     # General method definitions #
     def update_magnetization(self):
@@ -71,6 +79,7 @@ class Ising:
         self.a = a_
         self.b = b_
         self.mh_lookup = np.exp(np.array([0, 0, -4, 0, -8, 8, 0, 4, 0]) * self.a)
+        self.wolff_padd = 1 - np.exp(-2 * self.a)
     ####################################################################################################
 
     # Metropolis-Hastings algorithm #
@@ -87,6 +96,28 @@ class Ising:
             self.lattice = partial_lattices[0] + partial_lattices[1]
     ####################################################################################################
 
+    # Wolff algorithm #
+    def wolff(self):
+        '''
+        Method to perform the Wolff algorithm on the lattice. This method is optimized for the case where
+        the spin-field coupling constant b = 0, and is only appropriate for that case. Note also that it
+        doesn't work well for the antiferromagnetic case (a < 0).
+        '''
+        # Generate seed spin
+        seed = np.random.randint(self.N, size=2)
+        spin = self.lattice[seed[0], seed[1]]
+        self.lattice[seed[0], seed[1]] = -spin
+        unvisited = deque([seed])
+        while unvisited:   # while unvisited sites remain
+            site = unvisited.pop()  # take one and remove from the unvisited list
+            neighbouring_sites = [((site[0]+1)%self.N,site[1]),((site[0]-1)%self.N,site[1]),
+                                  (site[0],(site[1]+1)%self.N),(site[0],(site[1]-1)%self.N)]
+            for nbr in neighbouring_sites:
+                if self.lattice[nbr[0], nbr[1]] == spin and np.random.random() < self.wolff_padd:
+                    self.lattice[nbr[0], nbr[1]] = -spin
+                    unvisited.appendleft(nbr)
+    ####################################################################################################
+
     def evolve(self, algorithm, steps):
         '''
         Method to evolve the lattice using the specified algorithm for the specified number of steps.
@@ -94,3 +125,6 @@ class Ising:
         if algorithm == 'metropolis_hastings' and self.b == 0:
             for _ in range(steps):
                 self.metropolis_hastings_no_field()
+        if algorithm == 'wolff':
+            for _ in range(steps):
+                self.wolff()
