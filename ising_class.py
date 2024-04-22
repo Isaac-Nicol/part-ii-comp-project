@@ -7,6 +7,7 @@ Plus whatever else I, the God of all Atoms, decide to add.
 
 from collections import deque
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 # Define the Ising class, which contains the lattice as well as methods to compute physical quantities and perform iterations of each algorithm
@@ -118,13 +119,15 @@ class Ising:
                     unvisited.appendleft(nbr)
     ####################################################################################################
 
-    def evolve(self, algorithm, steps):
+    def evolve(self, algorithm, steps, history=False):
         '''
         Method to evolve the lattice using the specified algorithm for the specified number of steps.
         '''
         if algorithm == 'metropolis_hastings' and self.b == 0:
             for _ in range(steps):
                 self.metropolis_hastings_no_field()
+                self.update_magnetization() if history else None
         if algorithm == 'wolff':
             for _ in range(steps):
                 self.wolff()
+                self.update_magnetization() if history else None
