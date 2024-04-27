@@ -18,4 +18,5 @@ def get_autocorrelation_time(autocorr, burn_in=0):
     Function to compute the autocorrelation time.
     '''
     considered = autocorr[burn_in:]
-    return np.sum(considered)
+    smaller = np.where(considered < np.exp(-1)*considered[0])[0]
+    return smaller[0] if len(smaller) > 0 else len(considered)
