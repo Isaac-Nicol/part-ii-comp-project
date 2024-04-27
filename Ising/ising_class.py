@@ -87,6 +87,12 @@ class Ising:
         self.b = b_
         self.mh_lookup = np.exp(np.array([0, 0, -4, 0, -8, 8, 0, 4, 0]) * self.a)
         self.wolff_padd = 1 - np.exp(-2 * self.a)
+
+    def get_partial_lattices(self):
+        '''
+        Method to return the two partial lattices used in the Metropolis-Hastings algorithm.
+        '''
+        return [self.lattice * self.checkerboard, self.lattice * self.opposite_checkerboard]
     ####################################################################################################
 
     # Metropolis-Hastings algorithm ####################################################################
@@ -96,11 +102,13 @@ class Ising:
         the case where the spin-field coupling constant b = 0, and is only appropriate for that case.
         '''
         p = np.random.rand(self.N, self.N)
-        partial_lattices = [self.lattice * self.checkerboard, self.lattice * self.opposite_checkerboard]
 
-        for partial in partial_lattices:
-            partial[np.where(self.mh_lookup[self.sum_neighbours()] > p)] *= -1 # there is a large redundancy in evalutating the neighbour sum for the whole lattice, but it is necessary for the vectorization so it is probably still faster in python
-            self.lattice = partial_lattices[0] + partial_lattices[1]
+        partial_lattices = self.get_partial_lattices()
+        partial_lattices[0][np.where(self.mh_lookup[self.sum_neighbours()] > p)] *= -1
+        self.lattice = partial_lattices[0] + partial_lattices[1]
+        partial_lattices = self.get_partial_lattices()
+        partial_lattices[1][np.where(self.mh_lookup[self.sum_neighbours()] > p)] *= -1
+        self.lattice = partial_lattices[0] + partial_lattices[1]
     ####################################################################################################
 
     # Wolff algorithm ##################################################################################
