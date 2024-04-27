@@ -7,18 +7,22 @@ Plus whatever else I, the God of all Atoms, decide to add.
 
 from collections import deque
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 # Define the Ising class, which contains the lattice as well as methods to compute physical quantities and perform iterations of each algorithm
 class Ising:
     '''
-    Class to simulate the Ising model in 2D using the Metropolis-Hastings algorithm and periodic boundary 
-    conditions. The object is created with parameters N, a, b:
+    Class to simulate the Ising model in 2D using periodic boundary conditions. The object is created with parameters N, a, b:
     N: the lattice size (N x N)
     a: the dimensionless spin-spin coupling constant
     b: the dimensionless spin-field coupling constant
     The lattice is initialized with random spins by default, but can also be initialized with all spins
     up or down.
+    The evolve method is used to evolve the lattice using the specified algorithm for the specified number of steps. It takes arguments:
+    algorithm: 'metropolis_hastings' or 'wolff' (case-sensitive) - specifies the algorithm to use
+    steps: the number of iterations to perform
+    (optional) history: boolean, whether to store the magnetization and energy at each step
     '''
     def __init__(self, N_, a_, b_, alignment='random'):
         # Parameters
@@ -49,7 +53,7 @@ class Ising:
         # Wolff attributes
         self.wolff_padd = 1 - np.exp(-2 * self.a)
 
-    # General method definitions #
+    # General method definitions ########################################################################
     def update_magnetization(self):
         '''
         Method to compute the magnetization and relative magnetization of the lattice, and append the
@@ -60,6 +64,9 @@ class Ising:
         self.rel_mag_history = np.append(self.rel_mag_history, self.rel_mag)
 
     def sum_neighbours(self):
+        '''
+        Method to compute the sum of the spins of the nearest neighbours of each site in the lattice.
+        '''
         return np.multiply(self.lattice, (np.roll(self.lattice, 1, axis=0) + np.roll(self.lattice, -1, axis=0) 
                                + np.roll(self.lattice, 1, axis=1) + np.roll(self.lattice, -1, axis=1)))
     
@@ -82,7 +89,7 @@ class Ising:
         self.wolff_padd = 1 - np.exp(-2 * self.a)
     ####################################################################################################
 
-    # Metropolis-Hastings algorithm #
+    # Metropolis-Hastings algorithm ####################################################################
     def metropolis_hastings_no_field(self):
         '''
         Method to perform the Metropolis-Hastings algorithm on the lattice. This method is optimized for
@@ -96,7 +103,7 @@ class Ising:
             self.lattice = partial_lattices[0] + partial_lattices[1]
     ####################################################################################################
 
-    # Wolff algorithm #
+    # Wolff algorithm ##################################################################################
     def wolff(self):
         '''
         Method to perform the Wolff algorithm on the lattice. This method is optimized for the case where
@@ -118,13 +125,20 @@ class Ising:
                     unvisited.appendleft(nbr)
     ####################################################################################################
 
-    def evolve(self, algorithm, steps):
+    def evolve(self, algorithm, steps, history=False, spacing=1):
         '''
         Method to evolve the lattice using the specified algorithm for the specified number of steps.
+        Parameters:
+        algorithm: 'metropolis_hastings' or 'wolff' (case-sensitive) - specifies the algorithm to use
+        steps: the number of iterations to perform
+        (optional) history: boolean, whether to store the magnetization and energy at each step
+        (optional) spacing: the number of steps between each recorded magnetization and energy
         '''
         if algorithm == 'metropolis_hastings' and self.b == 0:
             for _ in range(steps):
                 self.metropolis_hastings_no_field()
+                self.update_magnetization() if (history and _ % spacing == 0) else None
         if algorithm == 'wolff':
             for _ in range(steps):
                 self.wolff()
+                self.update_magnetization() if (history and _ % spacing == 0) else None
