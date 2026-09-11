@@ -28,19 +28,34 @@ def plot_disk_configuration(positions,L):
 
 # Disk model class
 class DiskModel:
+    '''
+    Class to simulate the hard-disk model of a fluid. The object is created with parameters N, L:
+    N: the number of disks
+    L: the system size (L x L)
+    The configuration is initialized with a square grid pattern which is filled up to N disks, assuming
+    that N disks can fit in the system. Otherwise, the number of disks is reduced to the maximum possible
+    value: ceil(L/2 - 1)^2.
+    The evolve method is used to evolve the system using the specified algorithm for the specified number of steps. It takes arguments:
+    algorithm: 'metropolis_hastings', 'cluster', 'generalized_mh' or 'generalized_cluster' - specifies the algorithm to use
+    steps: the number of iterations to perform
+    (optional) energy_history: boolean, whether to store a record of the system energy (default False)
+    (optional) spacing: the number of steps between each recorded energy (default 1)
+    '''
     def __init__(self,N,L):
         self.N = N
         self.L = L
+        
         self.configuration = self.generate_configuration()
         self.occupation = self.initialize_occupation_array()
+        self.energy_history = np.array([])
         
     def generate_configuration(self):
         '''
         This generates an evenly spaced grid pattern and then fills it with disks up to self.N
         '''
         # The configuration is only possible if the number of disks is less than a certain threshold
-        if self.N > np.ceil(self.L/2 - 1)**2:
-            self.N = np.ceil(self.L/2 - 1)**2  
+        if self.N > int(self.L/2 - 1)**2:
+            self.N = int(self.L/2 - 1)**2 
 
         # Number of rows and columns
         rows = np.ceil(np.sqrt(self.N)).astype(np.int32)
@@ -89,13 +104,13 @@ class DiskModel:
             for dy in range(-2*extent,2*extent+1):
                 y = (int(point[1]) + dy) % self.L
                 index = self.occupation[x,y]
-                if index >= i and self.get_distance(point, self.configuration[index]) < extent:
+                if index > i and self.get_distance(point, self.configuration[index]) < extent:
                     neighbours.append(index)
         return neighbours
     
     def valid_move(self, new_disk):
         '''
-        Check if a move is valid
+        Check if a move is valid by checking for overlaps with neighbours
         '''
         overlaps = self.get_neighbours(new_disk)
         if overlaps:
@@ -184,6 +199,8 @@ class DiskModel:
                     
         if self.valid_move(new_disk):
             self.clear_disk(disk)
+            
+            # Check energy change of the move and accept where appropriate
             old_potential = self.disk_potential(disk)
             self.configuration[disk] = new_disk
             new_potential = self.disk_potential(disk)
@@ -200,24 +217,27 @@ class DiskModel:
     
     # Cluster method definitions ########################################################################
     def disk_cluster_move(self):
-            '''Iteratively reflect disks in pivot, starting with index, 
-            until no more overlaps occur.'''
-            # Choose a random disk and pivot point
-            index = np.random.randint(self.N)
-            pivot = np.random.uniform(0, self.L, 2)
+        '''Iteratively reflect disks in pivot, starting with index, 
+        until no more overlaps occur.'''
+        # Choose a random disk and pivot point
+        index = np.random.randint(self.N)
+        pivot = np.random.uniform(0, self.L, 2)
             
-            movers = deque() # deque is an efficient way to manage the list of disks to move
-            movers.appendleft(index)
-            self.clear_disk(index)
-            while movers:
-                mover = movers.pop()
-                self.configuration[mover] = (2*pivot - self.configuration[mover]) % self.L # reflect disk
-                overlap = self.get_neighbours(self.configuration[mover])
-                for i in overlap:
-                    movers.appendleft(i)
-                    self.clear_disk(i)
-                self.add_disk(mover)
-            return
+        movers = deque() # deque is an efficient way to manage the list of disks to move
+        movers.appendleft(index)
+        self.clear_disk(index)
+        while movers:
+            mover = movers.pop()
+            self.configuration[mover] = (2*pivot - self.configuration[mover]) % self.L # reflect disk
+                
+            # Find overlaps and add them to the cluster
+            overlap = self.get_neighbours(self.configuration[mover])
+            for i in overlap:
+                movers.appendleft(i)
+                self.clear_disk(i)
+                
+            self.add_disk(mover)
+        return
     
     def disk_cluster_move_with_potential(self):
         '''
@@ -234,11 +254,15 @@ class DiskModel:
         while movers:
             mover = movers.pop()
             new_disk = (2*pivot - self.configuration[mover]) % self.L # reflect disk
+            
+            # Find overlaps and add them to the cluster
             overlap = self.get_neighbours(new_disk)
             for i in overlap:
                 movers.appendleft(i)
                 cluster.append(i)
                 self.clear_disk(i)
+            
+            # Check the energy interactions with nearby disks and add to cluster where appropriate
             old_neighbours = self.get_neighbours(self.configuration[mover], extent=3)
             new_neighbours = self.get_neighbours(new_disk, extent=3)
             interactions = set(old_neighbours + new_neighbours)
@@ -250,13 +274,14 @@ class DiskModel:
                     movers.appendleft(interaction)
                     cluster.append(interaction)
                     self.clear_disk(interaction)
+            
             self.configuration[mover] = new_disk
         for item in cluster:
             self.add_disk(item)
         return
     #####################################################################################################
 
-    def evolve(self, algorithm='metropolis_hastings', steps=1000):
+    def evolve(self, algorithm='metropolis_hastings', steps=1000, energy_history=False, spacing=1):
         '''
         Perform the specified algorithm for the specified number of steps.
 
@@ -273,6 +298,8 @@ class DiskModel:
         elif algorithm == 'generalized_mh':
             for _ in range(steps):
                 self.metropolis_hastings_with_potential()
+                self.energy_history = np.append(self.energy_history, self.calculate_total_potential()) if (energy_history and _ % spacing == 0) else None
         elif algorithm == 'generalized_cluster':
             for _ in range(steps):
                 self.disk_cluster_move_with_potential()
+                self.energy_history = np.append(self.energy_history, self.calculate_total_potential()) if (energy_history and _ % spacing == 0) else None
