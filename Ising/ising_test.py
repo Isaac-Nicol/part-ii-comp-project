@@ -1,3 +1,7 @@
+'''
+This file performs preliminary tests of both the Metropolis-Hastings and Wolff algorithms for the 2D Ising model
+to ensure that they reproduce the expected physics.
+'''
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,16 +9,16 @@ import h5py
 from ising_class import Ising
 
 
+# Create file to store data
+path = os.path.join(os.getcwd(), 'Ising', 'Data', 'ising_test.hdf5')
+f = h5py.File(path, 'w')
+
 # Set parameter values
 N = 128
 a_values = [0.4, 0.6]
 b = 0
 algorithms = ['metropolis_hastings', 'wolff']
 lattice_samples = np.zeros((5, N, N))
-
-# Create file to store data
-path = os.path.join(os.getcwd(), 'Ising', 'ising_test.hdf5')
-f = h5py.File(path, 'w')
 
 # Run the simulation for both algorithms and different values of a
 for algorithm in algorithms:
@@ -44,4 +48,3 @@ for algorithm in algorithms:
         ising.update_magnetization()
         rel_mag_array = np.append(rel_mag_array, np.abs(ising.rel_mag))
     f.create_dataset(f'rel_mag_{algorithm}', data=rel_mag_array)
-

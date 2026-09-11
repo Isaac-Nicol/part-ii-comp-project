@@ -57,7 +57,7 @@ def magnetization_plot(rel_mag_array, a_values, save_path=None):
 
 
 # Load the data
-path = os.path.join(os.getcwd(), 'Ising', 'ising_test.hdf5')
+path = os.path.join(os.getcwd(), 'Ising', 'Data', 'ising_test.hdf5')
 f = h5py.File(path, 'r')
 
 # Parameters
@@ -71,7 +71,7 @@ for algorithm in algorithms:
         lattices = f[f'lattice_{algorithm}_{a}']
         lattices_to_plot = [lattices[j, :, :] for j in range(5)]
         lattice_multiplot(lattices_to_plot, titles, f'Evolution of the lattice with a = {a}', 
-                          save_path=os.path.join(os.getcwd(), 'Ising', f'lattice_{algorithm}_{a}.png'))
+                          save_path=os.path.join(os.getcwd(), 'Ising', 'Figures', f'lattice_{algorithm}_{a}.png'))
         
 # Plot the relative magnetization vs a for each algorithm
 a_values = [0.1, 0.3, 0.4, 0.43, 0.45, 0.5, 0.6, 0.8, 1]
@@ -80,4 +80,4 @@ a_values.reverse()
 for algorithm in algorithms:
     rel_mag_array = f[f'rel_mag_{algorithm}'][:]
     magnetization_plot(rel_mag_array, a_values, 
-                       save_path=os.path.join(os.getcwd(), 'Ising', f'rel_mag_{algorithm}.png'))
+                       save_path=os.path.join(os.getcwd(), 'Ising', 'Figures', f'rel_mag_{algorithm}.png'))

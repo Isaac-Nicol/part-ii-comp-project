@@ -1,10 +1,7 @@
 '''
 This file will contain definitions for the Ising class, with methods to initialize, perform iterations
 of the Metropolis-Hastings & Wolff algorithms, and to calculate the magnetization, energy etc.
-Plus whatever else I, the God of all Atoms, decide to add.
 '''
-
-
 from collections import deque
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,7 +19,9 @@ class Ising:
     The evolve method is used to evolve the lattice using the specified algorithm for the specified number of steps. It takes arguments:
     algorithm: 'metropolis_hastings' or 'wolff' (case-sensitive) - specifies the algorithm to use
     steps: the number of iterations to perform
-    (optional) history: boolean, whether to store the magnetization and energy at each step
+    (optional) magnetization_history: boolean, whether to store a record of the relative magnetization (default False)
+    (optional) energy_history: boolean, whether to store a record of the system energy (default False)
+    (optional) spacing: the number of steps between each recorded magnetization and energy (default 1)
     '''
     def __init__(self, N_, a_, b_, alignment='random'):
         # Parameters
@@ -133,7 +132,7 @@ class Ising:
                     unvisited.appendleft(nbr)
     ####################################################################################################
 
-    def evolve(self, algorithm, steps, history=False, spacing=1):
+    def evolve(self, algorithm, steps, magnetization_history=False, energy_history=False, spacing=1):
         '''
         Method to evolve the lattice using the specified algorithm for the specified number of steps.
         Parameters:
@@ -145,8 +144,10 @@ class Ising:
         if algorithm == 'metropolis_hastings' and self.b == 0:
             for _ in range(steps):
                 self.metropolis_hastings_no_field()
-                self.update_magnetization() if (history and _ % spacing == 0) else None
+                self.update_magnetization() if (magnetization_history and _ % spacing == 0) else None
+                self.update_energy() if (energy_history and _ % spacing == 0) else None
         if algorithm == 'wolff':
             for _ in range(steps):
                 self.wolff()
-                self.update_magnetization() if (history and _ % spacing == 0) else None
+                self.update_magnetization() if (magnetization_history and _ % spacing == 0) else None
+                self.update_energy() if (energy_history and _ % spacing == 0) else None
